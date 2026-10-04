@@ -1,27 +1,16 @@
 // Package mascot draws and animates the Accred fox.
 //
-// The artwork is pixel art drawn with half-block characters, so each terminal
-// row carries two rows of pixels.
+// The fox is a small hand-drawn sprite in a handful of flat colours, rendered
+// with half-block characters so each terminal row carries two rows of pixels.
 package mascot
 
 import (
-	"bytes"
-	_ "embed"
 	"fmt"
 	"image/color"
-	"image/png"
 	"math/rand"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-)
-
-// The sprites are generated from assets/mascot.png by tools/sprite.
-var (
-	//go:embed fox16.png
-	roamPNG []byte
-	//go:embed fox28.png
-	bannerPNG []byte
 )
 
 type State int
@@ -37,7 +26,7 @@ const (
 const (
 	// Height is the number of terminal rows the roaming fox occupies: the
 	// sprite plus one row of headroom for hopping.
-	Height = 9
+	Height = 7
 
 	happyTicks = 18
 	sadTicks   = 28
@@ -45,7 +34,48 @@ const (
 	sleepAfter = 500
 )
 
+// The fox, drawn facing left with its tail on the right. Features sit on even
+// rows wherever possible, so most cells are one solid colour.
+//
+//	B fur   W white   K eyes and nose   P cheeks   . empty
+var fox = []string{
+	".BB.......BB....",
+	".BWB.....BWB....",
+	".BWBBBBBBBWB....",
+	"BBBBBBBBBBBBB...",
+	"BBBKKBBBKKBBB...",
+	"BBBKKBBBKKBBB..W",
+	"BPPWWWKWWWPPB.WW",
+	"BPPWWWWWWWPPB.WW",
+	".BBWWWWWWWBB.BBW",
+	"..BBWWWWWBBBBBB.",
+	"..BBWWWWWBBBB...",
+	"..BB.....BB.....",
+}
+
+const (
+	eyeRow  = 4 // upper half of the eyes; fur-coloured when they close
+	tailTop = 5 // first row of the tail tip
+	feetRow = 11
+)
+
+// The tail tip one pixel lower, for wagging.
+var tailDown = []string{"...", "..W", ".WW", "BWW"}
+
+// Feet for the three steps of the walk: both down, then each lifted in turn.
+var feet = []string{
+	"..BB.....BB.....",
+	".........BB.....",
+	"..BB............",
+}
+
 var (
+	palette = map[byte]color.NRGBA{
+		'B': {96, 165, 250, 255},
+		'W': {248, 250, 252, 255},
+		'K': {15, 23, 42, 255},
+		'P': {249, 168, 212, 255},
+	}
 	hop          = []int{0, 1, 2, 2, 1, 0}
 	overlayStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "#1D4ED8", Dark: "#60A5FA"})
 )
@@ -55,16 +85,11 @@ type sprite struct {
 	px   []color.NRGBA // alpha 0 is transparent
 }
 
-func decode(raw []byte) sprite {
-	decoded, err := png.Decode(bytes.NewReader(raw))
-	if err != nil {
-		panic("mascot: embedded sprite is unreadable: " + err.Error())
-	}
-	b := decoded.Bounds()
-	s := sprite{w: b.Dx(), h: b.Dy(), px: make([]color.NRGBA, b.Dx()*b.Dy())}
-	for y := range s.h {
+func parse(rows []string) sprite {
+	s := sprite{w: len(rows[0]), h: len(rows), px: make([]color.NRGBA, len(rows[0])*len(rows))}
+	for y, row := range rows {
 		for x := range s.w {
-			s.px[y*s.w+x] = color.NRGBAModel.Convert(decoded.At(b.Min.X+x, b.Min.Y+y)).(color.NRGBA)
+			s.px[y*s.w+x] = palette[row[x]]
 		}
 	}
 	return s
@@ -83,25 +108,6 @@ func (s sprite) flipped() sprite {
 	for y := range s.h {
 		for x := range s.w {
 			out.px[y*s.w+x] = s.px[y*s.w+(s.w-1-x)]
-		}
-	}
-	return out
-}
-
-func dark(c color.NRGBA) bool {
-	return c.A != 0 && (299*int(c.R)+587*int(c.G)+114*int(c.B))/1000 < 150
-}
-
-// eyesClosed lowers the eyelids: the upper part of each eye takes the fur colour above it.
-func (s sprite) eyesClosed() sprite {
-	out := sprite{w: s.w, h: s.h, px: append([]color.NRGBA(nil), s.px...)}
-	for y := 1; y < s.h/2; y++ {
-		for x := range s.w {
-			here, _ := s.at(x, y)
-			below, _ := s.at(x, y+1)
-			if dark(here) && dark(below) {
-				out.px[y*s.w+x] = s.px[(y-1)*s.w+x]
-			}
 		}
 	}
 	return out
@@ -140,15 +146,35 @@ func (s sprite) render(rows, lift int) []string {
 	return lines
 }
 
-// Banner returns the large fox for the welcome screen, and its width in columns.
-func Banner() (art string, width int) {
-	s := decode(bannerPNG)
-	return strings.Join(s.render((s.h+1)/2, 0), "\n"), s.w
+type pose struct {
+	faceLeft, eyesClosed, tailDown bool
+	feet, lift                     int
 }
 
-type pose struct {
-	faceLeft, eyesClosed bool
-	lift                 int
+// draw builds the sprite for a pose from the base drawing.
+func draw(p pose) sprite {
+	rows := append([]string(nil), fox...)
+	if p.eyesClosed {
+		rows[eyeRow] = strings.ReplaceAll(rows[eyeRow], "K", "B")
+	}
+	if p.tailDown {
+		for i, tip := range tailDown {
+			row := rows[tailTop+i]
+			rows[tailTop+i] = row[:len(row)-len(tip)] + tip
+		}
+	}
+	rows[feetRow] = feet[p.feet]
+	s := parse(rows)
+	if !p.faceLeft {
+		s = s.flipped()
+	}
+	return s
+}
+
+// Banner returns the fox standing still for the welcome screen, and its width in columns.
+func Banner() (art string, width int) {
+	s := draw(pose{faceLeft: true})
+	return strings.Join(s.render(s.h/2, 0), "\n"), s.w
 }
 
 type Mascot struct {
@@ -160,12 +186,12 @@ type Mascot struct {
 	blink  int // ticks left with eyes closed
 	rng    *rand.Rand
 
-	art    sprite
+	width  int
 	frames map[pose][]string
 }
 
 func New(seed int64) *Mascot {
-	return &Mascot{dir: 1, rng: rand.New(rand.NewSource(seed)), art: decode(roamPNG), frames: map[pose][]string{}}
+	return &Mascot{dir: 1, rng: rand.New(rand.NewSource(seed)), width: len(fox[0]), frames: map[pose][]string{}}
 }
 
 func (m *Mascot) State() State { return m.state }
@@ -207,7 +233,7 @@ func (m *Mascot) Tick(width int) {
 		}
 		m.wander(width)
 	}
-	m.x = max(0, min(m.x, width-m.art.w))
+	m.x = max(0, min(m.x, width-m.width))
 }
 
 func (m *Mascot) wander(width int) {
@@ -231,27 +257,32 @@ func (m *Mascot) wander(width int) {
 }
 
 func (m *Mascot) step(width int) {
-	if m.x+m.dir < 0 || m.x+m.dir > width-m.art.w {
+	if m.x+m.dir < 0 || m.x+m.dir > width-m.width {
 		m.dir = -m.dir
 	}
 	m.x += m.dir
 }
 
 func (m *Mascot) pose() pose {
-	// The artwork's tail is on its right, so it trails when the fox walks left.
+	// The drawing's tail is on its right, so it trails when the fox walks left.
 	p := pose{faceLeft: m.dir < 0}
+	walk := []int{0, 1, 0, 2}
 	switch m.state {
 	case Thinking:
-		p.lift = m.tick % 2
+		p.feet = walk[m.tick%len(walk)]
+		p.tailDown = m.tick%2 == 0
 	case Happy:
 		p.lift = hop[m.tick%len(hop)]
+		p.tailDown = (m.tick/2)%2 == 0
 	case Sad, Sleeping:
-		p.eyesClosed = true
+		p.eyesClosed, p.tailDown = true, true
 	case Idle:
 		p.eyesClosed = m.blink > 0
 		if m.pause == 0 {
-			p.lift = (m.tick / 2) % 2
+			p.feet = walk[(m.tick/2)%len(walk)]
 		}
+		// A slow wag, whether walking or standing.
+		p.tailDown = (m.tick/5)%2 == 0
 	}
 	return p
 }
@@ -275,24 +306,17 @@ func (m *Mascot) frame(p pose) []string {
 	if lines, ok := m.frames[p]; ok {
 		return lines
 	}
-	art := m.art
-	if p.eyesClosed {
-		art = art.eyesClosed()
-	}
-	if !p.faceLeft {
-		art = art.flipped()
-	}
-	lines := art.render(Height, p.lift)
+	lines := draw(p).render(Height, p.lift)
 	m.frames[p] = lines
 	return lines
 }
 
 // View returns Height lines, each no wider than width.
 func (m *Mascot) View(width int) string {
-	if m.art.w > width {
+	if m.width > width {
 		return strings.Repeat("\n", Height-1)
 	}
-	x := max(0, min(m.x, width-m.art.w))
+	x := max(0, min(m.x, width-m.width))
 	lines := append([]string(nil), m.frame(m.pose())...)
 	mark := m.overlay()
 	markWidth := lipgloss.Width(mark)
@@ -300,7 +324,7 @@ func (m *Mascot) View(width int) string {
 		pad := strings.Repeat(" ", x)
 		if i == 1 && mark != "" {
 			switch {
-			case x+m.art.w+1+markWidth <= width:
+			case x+m.width+1+markWidth <= width:
 				lines[i] = pad + lines[i] + " " + overlayStyle.Render(mark)
 				continue
 			case x >= markWidth+1:

@@ -19,7 +19,7 @@ import (
 )
 
 // version is set by scripts/build-release.sh.
-var version = "0.1.1"
+var version = "0.1.2"
 
 const usage = `accred — tokenized LLM credits in your terminal
 

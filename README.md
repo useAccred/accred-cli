@@ -78,9 +78,9 @@ On first run the terminal asks you to pick a model. The choice is remembered.
 
 ## The fox
 
-The fox above the input box is the Accred mascot, drawn as pixel art with coloured half-block characters. It wanders while you type, hurries while a model is working, hops when things go well, and dozes off after a minute of quiet. It hides itself on screens shorter than 22 rows, and `/mascot off` hides it for good.
+The fox above the input box is the Accred mascot, redrawn by hand as a small sprite in four flat colours so it stays crisp in a terminal. It wanders and wags its tail while you type, hurries while a model is working, hops when things go well, and dozes off after a minute of quiet. It hides itself on screens shorter than 20 rows, and `/mascot off` hides it for good.
 
-It looks best in a terminal with 24-bit colour (iTerm2, Ghostty, kitty, WezTerm, Windows Terminal, VS Code). Terminals limited to 256 colours, such as macOS Terminal, show it with a reduced palette.
+Terminals draw characters, not pictures, so this is a drawing of the mascot at the top of this page, not the image itself.
 
 ## What it does not do yet
 
@@ -108,7 +108,7 @@ go build -o accred .
 go test ./...
 ```
 
-`scripts/build-release.sh` builds the release binaries and their checksums. `tools/sprite` regenerates the terminal sprites from `assets/mascot.png`.
+`scripts/build-release.sh` builds the release binaries and their checksums.
 
 ## License
 

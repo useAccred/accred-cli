@@ -65,7 +65,7 @@ func TestHappyAndSadReturnToIdle(t *testing.T) {
 func TestBannerIsTheFox(t *testing.T) {
 	art, width := Banner()
 	lines := strings.Split(art, "\n")
-	if len(lines) != 14 || width != 21 {
+	if len(lines) != len(fox)/2 || width != len(fox[0]) {
 		t.Fatalf("banner is %d rows by %d columns", len(lines), width)
 	}
 	for _, line := range lines {
@@ -75,20 +75,49 @@ func TestBannerIsTheFox(t *testing.T) {
 	}
 }
 
-func TestClosedEyesChangeOnlyTheEyes(t *testing.T) {
-	open := decode(roamPNG)
-	closed := open.eyesClosed()
-	changed := 0
-	for i := range open.px {
-		if open.px[i] != closed.px[i] {
-			changed++
-			if i/open.w >= open.h/2 {
-				t.Fatalf("pixel %d below the face changed", i)
+func TestDrawingIsWellFormed(t *testing.T) {
+	for _, rows := range [][]string{fox, feet} {
+		for _, row := range rows {
+			if len(row) != len(fox[0]) {
+				t.Fatalf("row %q is %d wide, want %d", row, len(row), len(fox[0]))
+			}
+			if extra := strings.Trim(row, "BWKP."); extra != "" {
+				t.Fatalf("row %q uses unknown colours %q", row, extra)
 			}
 		}
 	}
-	if changed == 0 || changed > 8 {
-		t.Fatalf("%d pixels changed, want only the upper eyelids", changed)
+	if len(fox)%2 != 0 {
+		t.Fatal("the drawing must have an even number of pixel rows")
+	}
+}
+
+func TestPosesChangeOnlyTheirOwnPart(t *testing.T) {
+	base := draw(pose{faceLeft: true})
+	differs := func(p pose) (rows map[int]bool) {
+		rows = map[int]bool{}
+		other := draw(p)
+		for i := range base.px {
+			if base.px[i] != other.px[i] {
+				rows[i/base.w] = true
+			}
+		}
+		return rows
+	}
+
+	if rows := differs(pose{faceLeft: true, eyesClosed: true}); len(rows) != 1 || !rows[eyeRow] {
+		t.Fatalf("closing the eyes changed rows %v", rows)
+	}
+	if rows := differs(pose{faceLeft: true, feet: 1}); len(rows) != 1 || !rows[feetRow] {
+		t.Fatalf("stepping changed rows %v", rows)
+	}
+	for row := range differs(pose{faceLeft: true, tailDown: true}) {
+		if row < tailTop || row >= tailTop+len(tailDown) {
+			t.Fatalf("wagging changed row %d, outside the tail", row)
+		}
+	}
+	// Facing right mirrors the drawing: the tail tip moves to the left edge.
+	if _, ok := draw(pose{}).at(0, tailTop); !ok {
+		t.Fatal("the mirrored fox should have its tail on the left")
 	}
 }
 
