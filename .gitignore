@@ -1,0 +1,7 @@
+/accred
+/dist
+/npm/README.md
+/npm/LICENSE
+node_modules
+.env
+.DS_Store

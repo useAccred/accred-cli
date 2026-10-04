@@ -1,0 +1,26 @@
+{
+  "name": "@useaccred/cli",
+  "version": "0.1.0",
+  "description": "Accred in your terminal: chat with any model and pay from tokenized LLM credits.",
+  "license": "MIT",
+  "author": "Accred",
+  "homepage": "https://accred.sh/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/useAccred/accred-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/useAccred/accred-cli/issues"
+  },
+  "keywords": ["accred", "cli", "llm", "ai", "terminal", "chat", "credits"],
+  "bin": {
+    "accred": "bin/accred.js"
+  },
+  "files": ["bin", "checksums.json"],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
