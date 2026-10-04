@@ -18,9 +18,9 @@ import (
 
 // The sprites are generated from assets/mascot.png by tools/sprite.
 var (
-	//go:embed fox12.png
+	//go:embed fox16.png
 	roamPNG []byte
-	//go:embed fox20.png
+	//go:embed fox28.png
 	bannerPNG []byte
 )
 
@@ -37,7 +37,7 @@ const (
 const (
 	// Height is the number of terminal rows the roaming fox occupies: the
 	// sprite plus one row of headroom for hopping.
-	Height = 7
+	Height = 9
 
 	happyTicks = 18
 	sadTicks   = 28
@@ -121,6 +121,10 @@ func (s sprite) render(rows, lift int) []string {
 			upper, hasUpper := s.at(x, row*2-top)
 			lower, hasLower := s.at(x, row*2+1-top)
 			switch {
+			case hasUpper && hasLower && upper == lower:
+				// A solid cell is painted as background, which leaves no seam between rows
+				// in terminals that draw block characters slightly short of the cell edge.
+				line.WriteString(lipgloss.NewStyle().Background(hex(upper)).Render(" "))
 			case hasUpper && hasLower:
 				line.WriteString(lipgloss.NewStyle().Foreground(hex(upper)).Background(hex(lower)).Render("▀"))
 			case hasUpper:

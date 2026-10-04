@@ -32,7 +32,7 @@ func (m Model) bannerText() string {
 
 // showMascot reports whether the roaming fox is drawn; short screens keep the room for chat.
 func (m Model) showMascot() bool {
-	return !m.cfg.NoMascot && m.height >= 20
+	return !m.cfg.NoMascot && m.height >= 22
 }
 
 func (m Model) userText(text string) string {

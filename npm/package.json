@@ -1,6 +1,6 @@
 {
   "name": "@useaccred/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Accred in your terminal: chat with any model and pay from tokenized LLM credits.",
   "license": "MIT",
   "author": "Accred",

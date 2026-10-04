@@ -1,6 +1,7 @@
 package mascot
 
 import (
+	"image/color"
 	"strings"
 	"testing"
 
@@ -64,7 +65,7 @@ func TestHappyAndSadReturnToIdle(t *testing.T) {
 func TestBannerIsTheFox(t *testing.T) {
 	art, width := Banner()
 	lines := strings.Split(art, "\n")
-	if len(lines) != 10 || width != 15 {
+	if len(lines) != 14 || width != 21 {
 		t.Fatalf("banner is %d rows by %d columns", len(lines), width)
 	}
 	for _, line := range lines {
@@ -86,8 +87,17 @@ func TestClosedEyesChangeOnlyTheEyes(t *testing.T) {
 			}
 		}
 	}
-	if changed != 2 {
-		t.Fatalf("%d pixels changed, want one per eye", changed)
+	if changed == 0 || changed > 8 {
+		t.Fatalf("%d pixels changed, want only the upper eyelids", changed)
+	}
+}
+
+func TestSolidCellsAreDrawnWithoutBlockGlyphs(t *testing.T) {
+	blue, white := color.NRGBA{0, 0, 255, 255}, color.NRGBA{255, 255, 255, 255}
+	// Two columns, two pixel rows: the first column is one colour, the second is split.
+	s := sprite{w: 2, h: 2, px: []color.NRGBA{blue, blue, blue, white}}
+	if got := s.render(1, 0)[0]; got != " ▀" {
+		t.Fatalf("row = %q, want a blank solid cell then a half block", got)
 	}
 }
 

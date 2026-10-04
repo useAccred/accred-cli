@@ -1,7 +1,7 @@
 {
-  "accred-darwin-amd64": "0ecc95f6810054ff127698338cd95de5cf0e590399abd0bee2e5aad5e980bc05",
-  "accred-darwin-arm64": "21954ceccf611d152df91d28718db58845bba7dcd560218c6715959f949acfb5",
-  "accred-linux-amd64": "ffd8a16a83cc81459a671f3d2e593bec05a56377d0ae7f045493d58f9af02ebd",
-  "accred-linux-arm64": "11e678d4b7613c4d9f5e430401fb19318340b30b53a155414d94c06df480b536",
-  "accred-windows-amd64.exe": "446d14584f92d1cd9835619cd902dc9e7fd4bfe94762aae76a25ed9e52bc084a"
+  "accred-darwin-amd64": "0e8938c0c369ac8d101b50a328172f6545a7039105add88f80fc35cedeec9f71",
+  "accred-darwin-arm64": "dee68f1549eaf163350c56f91dd4c157f104ad6a73a7fb101b92591b8ef57396",
+  "accred-linux-amd64": "fc4a62c08fec292d10d57c42b570eab1748edb2d2a311fdef6e3b4e2e4fbf576",
+  "accred-linux-arm64": "53080d7f6895309d0d876a92eb91ba96ed832b876159327025bd30295c1bb307",
+  "accred-windows-amd64.exe": "df088e94f36b376b85cc94b4f666f41ad263706427a65fe960b2a8b11db41a32"
 }
